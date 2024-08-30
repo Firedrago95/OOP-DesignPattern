@@ -94,7 +94,7 @@ public class DataViewer {
 1. 추상화와 다형성이 제대로 지켜지지 않은 코드는 개방 폐쇄 원칙을 어기게 된다.
 ```java
 public void drawCharacter(Character character) {
-    if (character instaceof Missile) { // 타입확인
+    if (character instanceof Missile) { // 타입확인
         Missile missile = (Missile) character; // 타입 다운 캐스팅
         missile.drawSpecific();
     } else {
@@ -111,7 +111,7 @@ public void drawCharacter(Character character) {
 public class Enemy extends Character {
     private int pathPattern;
     
-    public Enurmy(int pathPattern) {
+    public Enemy(int pathPattern) {
         this.pathPattern = pathPattern;
     }
     
@@ -186,3 +186,117 @@ public class Enemy extends Character {
 - 개방 폐쇄 원칙은 변화되는 부분을 추상화함으로써 사용자 입장에서 변화를 고정시킨다.
 - 상속을 이용한 개방 폐쇄 원칙 구현도 가능하다.
 - 변화 요구가 발생하면, 변화와 관련된 구현을 추상화해서 개방폐쇄 원칙에 맞게 수정할 수 있는지 확인하자
+
+## 3. 리스코프 치환 원칙
+- 상위 타입의 객체를 하위 타입의 객체로 치환해도 상위 타입을 사용하는 프로그램은 정상적으로 동작해야 한다.
+```java
+public void someMethod(SuperClass sc) {
+    sc.someMethod();
+}
+
+//SuperClass의 자식 클래스를 전달해도 정상작동 해야한다.
+someMethod(new Subclass());
+```
+
+### 3.1 리스코프 치환 원칙을 지키지 않을 때의 문제
+#### 1. 상속관계가 아닌 것을 상속관계로 표현할때의 문제 (직사각형 - 정사각형 문제)
+
+```java
+public class Rectangle {
+  private int width;
+  private int height;
+
+  public void setWidth(int width) {
+    this.width = width;
+  }
+
+  public void setHeight(int height) {
+    this.height = height;
+  }
+
+  public int getWidth() {
+    return width;
+  }
+
+  public int getHeight() {
+      return height;
+  }
+}
+```
+```java
+public class Square extends Rectangle {
+  @Override
+  public void setWidth(int width) {
+    super.setWidth(width);
+    super.setHeight(width);
+  }
+  @Override
+  public void setHeight(int height) {
+    super.setWidth(height);
+    super.setHeight(height);
+  }
+}
+```
+```java
+// 정사각형이 파라미터에 전달 될 경우 문제가 발생한다.
+public void increaseHeight(Rectangle rec) {
+    if (rec.getHeight() <= rec.getWidth()) {
+        rec.setHeight(rec.getWidth() + 10);
+    }    
+}
+```
+- 문제점 : 개념상 상속관계처럼 보이는 직사각형 - 정사각형을 상속으로 구현 한 경우 사용시 문제가 생길 수 있다.
+- increaseHeight()같은 기능이 필요할대는 Rectangle, Square를 별도의 타입으로 구현해야 한다.
+
+#### 2. 상위 타입에서 지정한 리턴 값의 범위에 해당되지 않는 값을 리턴하는 경우
+```java
+public class CopyUtil {
+    public static void copy(InputStream is, OutputStream out) {
+      byte[] data = new byte[512];
+      int len = -1;
+      
+      // InputStream.read() 메서드는 스트림의 끝에 도달하면 -1 리턴
+      while ((len = is.read(data)) != -1) {
+        out.write(data, 0, len);
+      }
+    }
+}
+```
+```java
+public class SatanInputStream implements InputStream {
+    public int read (byte[] data) {
+      ...
+      return 0; // 데이터가 없을때 0을 리턴
+    }
+}
+```
+- 문제점: InputStram을 상속받은 SatanInputStream 이 데이터가 없을때 0을 리턴한다. <br>
+  SatanInputStream이 CopyUtil 의 copy() 파라미터로 전달되면 무한루프가 실행된다. <br>
+- 하위 타입의 객체는 상위타입의 리턴값을 올바르게 전달하도록 해야한다.
+
+### 3.2 리스코프 치환 원칙은 꼐약과 확장에 대한 것
+- <span style="font-weight: bold;">명시된 명세에서 벗어난 값, 익셉션, 기능을 리턴하지 않도록 주의하자!</span>
+  - 직사각형 문제에서 Rectangle 클래스의 setHeight() 메서드는 두가지 계약을 제공한다.
+    - 1.높이값을 파라미터로 전달받은 값으로 변경한다.
+    - 2.폭 값은 변경되지 않는다.
+  - 반면 Square 는 setHeight() 메서드를 통해 높이와 폭 모두를 변경한다.
+- <span style="font-weight: bold;">리스코프 치환 원칙은 확장에 관한 것이기도 하다</span>
+```java
+public class Item {
+  // 변화되는 기능을 상위 타입에 추가
+  public boolean isDiscountAvailable() {
+      return true;
+  }
+}
+
+public class SpecialItem extends Item {
+  // 특별 아이템은 할인되지 않는다면
+  @Override
+  public boolean isDiscountAvailable() {
+      return false;
+  }
+}
+```
+- 리스코프 치환 원칙이 지켜지지 않으면, 개방 폐쇄 원칙도 지켜지지 않는다.
+- 위 코드 처럼 변화하는 코드를 상위 타입에 추가하고 하위 타입이 오버라이딩하면 <br>
+  사용하는 코드에서 instanceof 같은 불필요한 코드를 사용할 필요가 없다.
