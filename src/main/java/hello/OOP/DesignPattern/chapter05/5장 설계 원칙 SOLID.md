@@ -12,7 +12,7 @@
 ### 1.1 단일 책임 원칙 위반이 불러오는 문제점
 1. 책임이 많아지면 연쇄적인 변화가 발생한다.
 2. 책임이 분리되지 않으면, 불필요한 부분까지 재사용 될 수 있다.
-````java
+```java
 public class DataViewer {
     
     public void display() {
@@ -37,11 +37,11 @@ public class DataViewer {
     }
     ...// 기타 필드 등 다른 코드
 }
-````
+```
 문제점: 
 - DataViewer 클래스는 데이터를 읽고, 파싱하고, UI를 업데이트하는 여러 책임을 가지고 있다. <br>
 데이터 형식이 바뀌거나 UI가 변경되면 수정할 부분이 많아진다.
-````java
+```java
 // 데이터 읽기 책임을 가진 클래스
 public class HtmlLoader {
     public String loadHtml(String url) {
@@ -74,7 +74,7 @@ public class DataViewer {
     }
 }
 
-````
+```
 개선점:
 - HtmlLoader는 데이터 로딩만 담당하고, GuiUpdater는 화면 업데이트만 담당한다.
 - DataViewer는 단순히 두 클래스를 사용하는 조합자 역할만 하므로, 변화의 이유가 하나로 축소된다.
